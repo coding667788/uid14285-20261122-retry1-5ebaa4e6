@@ -1,0 +1,35 @@
+{
+  "manifest_id": "example-find",
+  "switches": [
+    {"id": "analytics", "default": false},
+    {"id": "debug", "default": false},
+    {"id": "telemetry", "default": false}
+  ],
+  "switch_constraints": [
+    "NOT (debug AND analytics)"
+  ],
+  "nodes": [
+    {"id": "app_public", "kind": "public_source", "categories": ["build_meta"]},
+    {"id": "vendor_sdk", "kind": "sensitive_source", "categories": ["device_id"]},
+    {"id": "user_store", "kind": "sensitive_source", "categories": ["email"]},
+    {"id": "audit_log", "kind": "sensitive_source", "categories": ["email", "trace_id"]},
+    {"id": "redactor", "kind": "sanitizer",
+     "cleans": [{"condition": "telemetry", "categories": ["email"]}]},
+    {"id": "bundle", "kind": "merge"},
+    {"id": "release", "kind": "merge"}
+  ],
+  "edges": [
+    {"id": "e01", "from": "vendor_sdk", "to": "bundle", "condition": "analytics"},
+    {"id": "e02", "from": "user_store", "to": "redactor", "condition": "TRUE"},
+    {"id": "e03", "from": "audit_log", "to": "redactor", "condition": "debug"},
+    {"id": "e04", "from": "app_public", "to": "bundle", "condition": "TRUE"},
+    {"id": "e05", "from": "redactor", "to": "bundle", "condition": "TRUE"},
+    {"id": "e06", "from": "audit_log", "to": "bundle", "condition": "debug AND NOT telemetry"},
+    {"id": "e07", "from": "bundle", "to": "release", "condition": "TRUE"},
+    {"id": "e08", "from": "app_public", "to": "release", "condition": "telemetry"}
+  ],
+  "targets": [
+    {"id": "t_pkg", "node": "release", "allowed_categories": ["build_meta", "trace_id"]},
+    {"id": "t_bundle", "node": "bundle", "allowed_categories": ["build_meta"]}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "manifest_id": "example-unsolvable",
+  "switches": [{"id": "a", "default": false}, {"id": "b", "default": false}],
+  "nodes": [
+    {"id": "sec", "kind": "sensitive_source", "categories": ["secret"]},
+    {"id": "pub", "kind": "public_source", "categories": ["p"]},
+    {"id": "mid", "kind": "merge"},
+    {"id": "rel", "kind": "merge"}
+  ],
+  "edges": [
+    {"id": "e1", "from": "sec", "to": "mid", "condition": "TRUE"},
+    {"id": "e2", "from": "pub", "to": "mid", "condition": "TRUE"},
+    {"id": "e3", "from": "mid", "to": "rel", "condition": "TRUE"}
+  ],
+  "targets": [
+    {"id": "t", "node": "rel", "allowed_categories": ["p"]}
+  ],
+  "required_reachability": [
+    {"id": "r_pub", "source": "pub", "target": "t", "requirement": "TRUE"}
+  ],
+  "candidates": [
+    {"id": "c1", "kind": "disable_edge", "edge": "e3", "condition": "TRUE", "cost": 1}
+  ]
+}

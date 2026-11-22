@@ -1,0 +1,43 @@
+{
+  "manifest_id": "example-remediate",
+  "switches": [
+    {"id": "analytics", "default": false},
+    {"id": "debug", "default": false},
+    {"id": "telemetry", "default": false}
+  ],
+  "switch_constraints": ["NOT (debug AND analytics)"],
+  "nodes": [
+    {"id": "app_public", "kind": "public_source", "categories": ["build_meta"]},
+    {"id": "vendor_sdk", "kind": "sensitive_source", "categories": ["device_id"]},
+    {"id": "user_store", "kind": "sensitive_source", "categories": ["email"]},
+    {"id": "audit_log", "kind": "sensitive_source", "categories": ["email"]},
+    {"id": "redactor", "kind": "sanitizer",
+     "cleans": [{"condition": "telemetry", "categories": ["email"]}]},
+    {"id": "bundle", "kind": "merge"},
+    {"id": "release", "kind": "merge"}
+  ],
+  "edges": [
+    {"id": "e01", "from": "vendor_sdk", "to": "bundle", "condition": "analytics"},
+    {"id": "e02", "from": "user_store", "to": "redactor", "condition": "TRUE"},
+    {"id": "e03", "from": "audit_log", "to": "redactor", "condition": "debug"},
+    {"id": "e04", "from": "app_public", "to": "bundle", "condition": "TRUE"},
+    {"id": "e05", "from": "redactor", "to": "bundle", "condition": "TRUE"},
+    {"id": "e06", "from": "audit_log", "to": "bundle", "condition": "debug AND NOT telemetry"},
+    {"id": "e07", "from": "bundle", "to": "release", "condition": "TRUE"},
+    {"id": "e08", "from": "app_public", "to": "release", "condition": "telemetry"}
+  ],
+  "targets": [
+    {"id": "t_pkg", "node": "release", "allowed_categories": ["build_meta"]}
+  ],
+  "required_reachability": [
+    {"id": "r_app_meta", "source": "app_public", "target": "t_pkg", "requirement": "TRUE"}
+  ],
+  "candidates": [
+    {"id": "a01", "kind": "disable_edge", "edge": "e01", "condition": "analytics", "cost": 2},
+    {"id": "a02", "kind": "disable_edge", "edge": "e06", "condition": "debug", "cost": 2},
+    {"id": "a03", "kind": "extend_cleaning", "node": "redactor", "condition": "TRUE",
+     "categories": ["email"], "cost": 3},
+    {"id": "a04", "kind": "disable_edge", "edge": "e07", "condition": "TRUE", "cost": 9},
+    {"id": "a05", "kind": "disable_edge", "edge": "e04", "condition": "TRUE", "cost": 1}
+  ]
+}
